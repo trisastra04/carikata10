@@ -9,7 +9,10 @@
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f3f4f6;
+            background-image: url('https://images.unsplash.com/photo-1615839235941-e744123579ec?q=80&w=1964&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
         .grid-cell {
             width: 40px;
@@ -40,7 +43,7 @@
             max-width: 900px;
             margin: 2rem auto;
             padding: 2rem;
-            background-color: #fff;
+            background-color: rgba(255, 255, 255, 0.95);
             border-radius: 1rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
@@ -121,7 +124,7 @@
         </div>
         
         <p id="instructions" class="text-md text-center text-gray-500 mb-6 max-w-2xl mx-auto">
-            Tandai kata-kata yang tersembunyi. Kata bisa ditemukan secara horizontal, vertikal, atau diagonal, baik dari arah normal maupun terbalik.
+            Tandai kata-kata yang tersembunyi. Kata bisa ditemukan secara horizontal, vertikal, atau diagonal.
         </p>
         
         <div class="flex flex-col md:flex-row gap-8">
@@ -418,11 +421,45 @@
             });
         }
 
-        function handleCellInteraction(e) {
+        function getCellsOnLine(startCell, endCell) {
+            const cells = [];
+            const r0 = parseInt(startCell.dataset.row);
+            const c0 = parseInt(startCell.dataset.col);
+            const r1 = parseInt(endCell.dataset.row);
+            const c1 = parseInt(endCell.dataset.col);
+
+            const dr = r1 - r0;
+            const dc = c1 - c0;
+
+            const steps = Math.max(Math.abs(dr), Math.abs(dc));
+            if (steps === 0) return [startCell];
+
+            const r_step = dr / steps;
+            const c_step = dc / steps;
+
+            for (let i = 0; i <= steps; i++) {
+                const currentRow = Math.round(r0 + i * r_step);
+                const currentCol = Math.round(c0 + i * c_step);
+                const cell = gridContainer.querySelector(`[data-row='${currentRow}'][data-col='${currentCol}']`);
+                if (cell) {
+                    cells.push(cell);
+                }
+            }
+            return cells;
+        }
+
+        function updateSelection(e) {
             const cell = e.target.closest('.grid-cell');
-            if (!cell || !isMouseDown || selectedCells.includes(cell)) return;
-            selectedCells.push(cell);
-            cell.classList.add('selected');
+            if (!cell || !isMouseDown) return;
+
+            // Hapus seleksi dari semua sel sebelumnya
+            selectedCells.forEach(c => c.classList.remove('selected'));
+
+            // Hitung path baru dan perbarui state
+            selectedCells = getCellsOnLine(selectedCells[0], cell);
+
+            // Tambahkan seleksi ke semua sel di path yang baru
+            selectedCells.forEach(c => c.classList.add('selected'));
         }
 
         function startSelection(e) {
@@ -523,13 +560,15 @@
         }
 
         gridContainer.addEventListener('mousedown', startSelection);
-        gridContainer.addEventListener('mouseover', handleCellInteraction);
+        gridContainer.addEventListener('mouseover', updateSelection);
         document.addEventListener('mouseup', endSelection);
         gridContainer.addEventListener('touchstart', (e) => startSelection(e.touches[0] ? { target: e.touches[0].target, preventDefault: e.preventDefault.bind(e) } : e), { passive: false });
         gridContainer.addEventListener('touchmove', (e) => {
             const touch = e.touches[0];
             const element = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (element) handleCellInteraction({ target: element });
+            if (element) {
+                updateSelection({ target: element });
+            }
             e.preventDefault();
         }, { passive: false });
         document.addEventListener('touchend', endSelection);
