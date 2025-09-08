@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Cari Kata - Sejarah Manusia Purba</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .grid-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+        }
+        .grid-cell.selected {
+            background-color: #fca5a5;
+            color: #fff;
+        }
+        .grid-cell.found {
+            background-color: #4ade80;
+            color: #fff;
+        }
+        .word.found {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        .container-wrapper {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .login-container {
+             max-width: 450px;
+        }
+        select:disabled, input:disabled {
+            background-color: #e5e7eb;
+            cursor: not-allowed;
+        }
+        @media (max-width: 768px) {
+            .container-wrapper {
+                padding: 1rem;
+            }
+            .grid-cell {
+                width: 18px;
+                height: 18px;
+                font-size: 0.7rem;
+            }
+            .grid-container {
+                grid-template-columns: repeat(20, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <!-- Login Container -->
+    <div id="login-section" class="container-wrapper login-container">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Login Siswa</h1>
+            <p class="text-gray-600 mt-2">Silakan isi data Anda untuk memulai.</p>
+        </div>
+        <form id="login-form" class="mt-8 space-y-6">
+             <div>
+                <label for="kelas" class="block text-sm font-medium text-gray-700">Kelas</label>
+                <select name="Kelas" id="kelas" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Pilih Kelas</option>
+                    <option value="X1">Kelas X1</option>
+                    <option value="X2">Kelas X2</option>
+                    <option value="X3">Kelas X3</option>
+                    <option value="X4">Kelas X4</option>
+                </select>
+            </div>
+            <div>
+                <label for="kode-akses" class="block text-sm font-medium text-gray-700">Kode Akses Kelas</label>
+                <input type="password" name="KodeAkses" id="kode-akses" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Masukkan kode akses" disabled>
+                <p id="kode-error" class="text-red-600 text-xs mt-1 hidden">Kode akses salah. Coba lagi.</p>
+            </div>
+            <div>
+                <label for="nama" class="block text-sm font-medium text-gray-700">Nama Siswa</label>
+                <select name="Nama" id="nama" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" disabled>
+                    <option value="">Pilih Kelas & Masukkan Kode</option>
+                </select>
+            </div>
+            <div>
+                <label for="tanggal" class="block text-sm font-medium text-gray-700">Tanggal</label>
+                <input type="date" name="Tanggal" id="tanggal" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <button type="submit" id="login-button" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Mulai Main
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-section" class="container-wrapper hidden">
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-gray-800">Kuis Cari Kata</h1>
+            <p class="text-lg text-gray-600 mt-2">Tema: Sejarah Manusia Purba di Indonesia</p>
+        </div>
+        
+        <div id="student-info" class="mb-6 p-3 bg-indigo-100 border border-indigo-200 rounded-lg text-center">
+            <p class="text-gray-800 text-sm">Nama: <span id="display-nama" class="font-semibold"></span></p>
+            <p class="text-gray-800 text-sm">Kelas: <span id="display-kelas" class="font-semibold"></span></p>
+        </div>
+        
+        <p id="instructions" class="text-md text-center text-gray-500 mb-6 max-w-2xl mx-auto">
+            Tandai kata-kata yang tersembunyi. Kata bisa ditemukan secara horizontal, vertikal, atau diagonal, baik dari arah normal maupun terbalik.
+        </p>
+        
+        <div class="flex flex-col md:flex-row gap-8">
+            <div id="grid-container" class="grid grid-cols-20 gap-0 bg-white shadow-md rounded-lg p-2"></div>
+            <div class="w-full md:w-1/3">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-gray-700">Cari Kata:</h2>
+                        <div id="timer" class="text-2xl font-bold text-indigo-600">00:00</div>
+                    </div>
+                    <ul id="word-list" class="space-y-2 text-lg text-gray-600"></ul>
+                    <button id="submit-button" class="mt-6 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                        Kirim Jawaban
+                    </button>
+                    <button id="reset-button" class="mt-2 w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
+                        Mulai Ulang
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="win-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-8 rounded-lg shadow-2xl text-center transform transition-all scale-95 w-full max-w-md">
+            <div id="modal-content-saving">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Menyimpan Hasil...</h2>
+                 <p class="text-gray-600">Harap tunggu sebentar.</p>
+            </div>
+            <div id="modal-content-success" class="hidden">
+                <h2 class="text-3xl font-bold text-green-500 mb-4">Selamat!</h2>
+                <p class="text-lg text-gray-700">Anda berhasil menemukan semua kata!</p>
+                <p id="final-time" class="text-lg text-gray-800 font-semibold my-2"></p>
+                <p class="text-sm text-gray-600 mb-6">Hasil Anda telah disimpan.</p>
+                <button id="play-again-button" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
+                    Main Lagi
+                </button>
+            </div>
+            <div id="modal-content-error" class="hidden">
+                 <h2 class="text-3xl font-bold text-red-500 mb-4">Gagal Menyimpan</h2>
+                 <p class="text-lg text-gray-700 mb-6">Terjadi kesalahan saat menyimpan hasil Anda. Silakan coba lagi.</p>
+                 <button id="retry-save-button" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
+                    Coba Lagi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxdKuK5OWAgA1BXsFr88JuEJStf--ifvq9MPG9iBi_BboVWXpkYNaIRf912sZqEDiA/exec'; 
+
+        const loginSection = document.getElementById('login-section');
+        const gameSection = document.getElementById('game-section');
+        const loginForm = document.getElementById('login-form');
+        const classSelect = document.getElementById('kelas');
+        const nameSelect = document.getElementById('nama');
+        const accessCodeInput = document.getElementById('kode-akses');
+        const kodeError = document.getElementById('kode-error');
+        
+        const displayNama = document.getElementById('display-nama');
+        const displayKelas = document.getElementById('display-kelas');
+        const submitButton = document.getElementById('submit-button');
+
+        let studentData = {};
+        let isGameFinished = false;
+
+        const studentDataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlrAmywCHGotbbidpk7stMZRBHTYDS4tlauolQyuhi2lOb7O1uB-g830Grw2wcMzwDp4QppS6Zv5fN/pub?gid=1251950646&single=true&output=csv';
+        const accessCodeUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlrAmywCHGotbbidpk7stMZRBHTYDS4tlauolQyuhi2lOb7O1uB-g830Grw2wcMzwDp4QppS6Zv5fN/pub?gid=1130388469&single=true&output=csv';
+
+        let studentListByClass = { 'X1': [], 'X2': [], 'X3': [], 'X4': [] };
+        let accessCodes = {};
+
+        function parseStudentCSV(text) {
+            const rows = text.split(/\r?\n/);
+            rows.forEach(row => {
+                const columns = row.split(',');
+                if (columns[0] && columns[0].trim() !== '') studentListByClass['X1'].push(columns[0].trim());
+                if (columns[1] && columns[1].trim() !== '') studentListByClass['X2'].push(columns[1].trim());
+                if (columns[2] && columns[2].trim() !== '') studentListByClass['X3'].push(columns[2].trim());
+                if (columns[3] && columns[3].trim() !== '') studentListByClass['X4'].push(columns[3].trim());
+            });
+        }
+
+        function parseAccessCodeCSV(text) {
+            const rows = text.split(/\r?\n/);
+            if (rows.length > 0) {
+                const codes = rows[0].split(',');
+                if (codes[0]) accessCodes['X1'] = codes[0].trim();
+                if (codes[1]) accessCodes['X2'] = codes[1].trim();
+                if (codes[2]) accessCodes['X3'] = codes[2].trim();
+                if (codes[3]) accessCodes['X4'] = codes[3].trim();
+            }
+        }
+        
+        function handleClassChange() {
+            const selectedClass = classSelect.value;
+            accessCodeInput.value = ''; 
+            kodeError.classList.add('hidden'); 
+            nameSelect.disabled = true; 
+            nameSelect.innerHTML = '<option value="">Masukkan Kode Akses</option>';
+
+            if (selectedClass) {
+                accessCodeInput.disabled = false;
+                accessCodeInput.focus();
+            } else {
+                accessCodeInput.disabled = true;
+            }
+        }
+        
+        function validateAccessCode() {
+            const selectedClass = classSelect.value;
+            const enteredCode = accessCodeInput.value.trim();
+
+            if (!selectedClass || !enteredCode) return;
+            
+            if (accessCodes[selectedClass] && enteredCode === accessCodes[selectedClass]) {
+                kodeError.classList.add('hidden');
+                updateNameDropdown(); 
+            } else {
+                nameSelect.disabled = true;
+                nameSelect.innerHTML = '<option value="">Kode Akses Salah</option>';
+                if (enteredCode.length >= (accessCodes[selectedClass]?.length || 1)) {
+                     kodeError.classList.remove('hidden');
+                } else {
+                     kodeError.classList.add('hidden');
+                }
+            }
+        }
+
+        function updateNameDropdown() {
+            const selectedClass = classSelect.value;
+            nameSelect.innerHTML = ''; 
+
+            if (selectedClass) {
+                nameSelect.disabled = false;
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Pilih Nama Siswa';
+                nameSelect.appendChild(defaultOption);
+
+                const names = studentListByClass[selectedClass];
+                names.sort();
+                names.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    nameSelect.appendChild(option);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tanggal').value = today;
+
+            Promise.all([
+                fetch(studentDataUrl).then(res => { if (!res.ok) throw new Error('Gagal memuat data siswa'); return res.text(); }),
+                fetch(accessCodeUrl).then(res => { if (!res.ok) throw new Error('Gagal memuat kode akses'); return res.text(); })
+            ]).then(([studentCsvText, accessCodeCsvText]) => {
+                parseStudentCSV(studentCsvText);
+                parseAccessCodeCSV(accessCodeCsvText);
+                classSelect.addEventListener('change', handleClassChange);
+                accessCodeInput.addEventListener('input', validateAccessCode);
+            }).catch(error => {
+                console.error('Error fetching initial data:', error);
+                const kelasLabel = document.querySelector('label[for="kelas"]');
+                const errorMsg = document.createElement('p');
+                errorMsg.textContent = `${error.message}. Coba muat ulang halaman.`;
+                errorMsg.className = 'text-red-600 text-sm mt-2 p-2 bg-red-100 rounded-md';
+                loginForm.insertBefore(errorMsg, loginForm.firstChild);
+            });
+
+
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                studentData = Object.fromEntries(formData.entries());
+                
+                displayNama.textContent = studentData.Nama;
+                displayKelas.textContent = studentData.Kelas;
+
+                loginSection.classList.add('hidden');
+                gameSection.classList.remove('hidden');
+                initializeGame();
+            });
+        });
+        
+        const words = ['KOENIGSWALD', 'MEGANTHROPUS', 'YUNNAN', 'AFRIKA', 'FLORESIENSIS', 'SANGIRAN', 'DONGSON', 'PROTOMELAYU', 'DEUTROMELAYU', 'PITHECANTHROPUS'];
+        const gridSize = 20;
+        let grid = [];
+        let isMouseDown = false;
+        let selectedCells = [];
+        let seconds = 0;
+        let timerInterval = null;
+        const foundWords = new Set();
+        
+        const gridContainer = document.getElementById('grid-container');
+        const wordListContainer = document.getElementById('word-list');
+        const resetButton = document.getElementById('reset-button');
+        const winModal = document.getElementById('win-modal');
+        const playAgainButton = document.getElementById('play-again-button');
+        const retrySaveButton = document.getElementById('retry-save-button');
+        const timerDisplay = document.getElementById('timer');
+        const finalTimeDisplay = document.getElementById('final-time');
+
+        function initializeGame() {
+            grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
+            foundWords.clear();
+            placeWords();
+            fillEmptyCells();
+            renderGrid();
+            renderWordList();
+            seconds = 0;
+            isGameFinished = false;
+            submitButton.disabled = true;
+            if (timerInterval) clearInterval(timerInterval);
+            updateTimerDisplay();
+            startTimer();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(seconds / 60);
+            const displaySeconds = seconds % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
+        }
+
+        function placeWords() {
+            const directions = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 1, y: -1 }];
+            words.forEach(word => {
+                let placed = false;
+                while (!placed) {
+                    // Menghapus logika pembalikan kata. Kata akan selalu normal.
+                    const currentWord = word;
+                    const dir = directions[Math.floor(Math.random() * directions.length)];
+                    const row = Math.floor(Math.random() * gridSize);
+                    const col = Math.floor(Math.random() * gridSize);
+                    if (canPlaceWord(currentWord, row, col, dir)) {
+                        for (let i = 0; i < currentWord.length; i++) {
+                            grid[row + i * dir.y][col + i * dir.x] = currentWord[i];
+                        }
+                        placed = true;
+                    }
+                }
+            });
+        }
+
+        function canPlaceWord(word, row, col, dir) {
+            if (row + (word.length - 1) * dir.y >= gridSize || col + (word.length - 1) * dir.x >= gridSize || row + (word.length - 1) * dir.y < 0 || col + (word.length - 1) * dir.x < 0) return false;
+            for (let i = 0; i < word.length; i++) {
+                if (grid[row + i * dir.y][col + i * dir.x] !== '' && grid[row + i * dir.y][col + i * dir.x] !== word[i]) return false;
+            }
+            return true;
+        }
+
+        function fillEmptyCells() {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    if (grid[i][j] === '') grid[i][j] = alphabet[Math.floor(Math.random() * alphabet.length)];
+                }
+            }
+        }
+
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, minmax(0, 1fr))`;
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell');
+                    cell.textContent = grid[i][j];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    gridContainer.appendChild(cell);
+                }
+            }
+        }
+        
+        function renderWordList() {
+            wordListContainer.innerHTML = '';
+            words.forEach(word => {
+                const li = document.createElement('li');
+                li.textContent = word;
+                li.classList.add('word');
+                li.id = `word-${word}`;
+                if (foundWords.has(word)) li.classList.add('found');
+                wordListContainer.appendChild(li);
+            });
+        }
+
+        function handleCellInteraction(e) {
+            const cell = e.target.closest('.grid-cell');
+            if (!cell || !isMouseDown || selectedCells.includes(cell)) return;
+            selectedCells.push(cell);
+            cell.classList.add('selected');
+        }
+
+        function startSelection(e) {
+            const cell = e.target.closest('.grid-cell');
+            if (!cell) return;
+            isMouseDown = true;
+            selectedCells = [cell];
+            cell.classList.add('selected');
+            e.preventDefault();
+        }
+
+        function endSelection() {
+            if (!isMouseDown) return;
+            isMouseDown = false;
+            let selectedWord = selectedCells.map(c => c.textContent).join('');
+            
+            // Logika pengecekan kata terbalik dihapus.
+            if (words.includes(selectedWord)) {
+                markWordAsFound(selectedWord, selectedCells);
+            } else {
+                selectedCells.forEach(cell => cell.classList.remove('selected'));
+            }
+            selectedCells = [];
+        }
+
+        function markWordAsFound(word, cells) {
+            if (isGameFinished) return;
+            cells.forEach(cell => {
+                cell.classList.remove('selected');
+                cell.classList.add('found');
+            });
+            document.getElementById(`word-${word}`).classList.add('found');
+            foundWords.add(word);
+            
+            if (foundWords.size >= 5) {
+                submitButton.disabled = false;
+            }
+
+            if (foundWords.size === words.length) {
+                clearInterval(timerInterval);
+                finalTimeDisplay.textContent = `Waktu Anda: ${timerDisplay.textContent}`;
+                handleGameWin();
+            }
+        }
+
+        function handleGameWin() {
+            if(isGameFinished) return;
+            isGameFinished = true;
+            showModal('saving');
+            saveResults();
+        }
+        
+        function saveResults() {
+             if (SCRIPT_URL === 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                console.error('Error: URL Google Script belum diatur.');
+                showModal('error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('Nama', studentData.Nama);
+            formData.append('Kelas', studentData.Kelas);
+            formData.append('Tanggal', studentData.Tanggal);
+            formData.append('JumlahKataDitemukan', foundWords.size);
+            formData.append('KataYangDitemukan', Array.from(foundWords).join(', '));
+            formData.append('WaktuPengerjaan', timerDisplay.textContent);
+
+            fetch(SCRIPT_URL, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result === 'success') {
+                        showModal('success');
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving data:', error);
+                    showModal('error');
+                });
+        }
+
+        function showModal(state) {
+            const modalSaving = document.getElementById('modal-content-saving');
+            const modalSuccess = document.getElementById('modal-content-success');
+            const modalError = document.getElementById('modal-content-error');
+            
+            modalSaving.classList.add('hidden');
+            modalSuccess.classList.add('hidden');
+            modalError.classList.add('hidden');
+
+            if (state === 'saving') modalSaving.classList.remove('hidden');
+            else if (state === 'success') modalSuccess.classList.remove('hidden');
+            else if (state === 'error') modalError.classList.remove('hidden');
+
+            winModal.classList.remove('hidden');
+            winModal.querySelector('div').classList.add('scale-100');
+        }
+
+        gridContainer.addEventListener('mousedown', startSelection);
+        gridContainer.addEventListener('mouseover', handleCellInteraction);
+        document.addEventListener('mouseup', endSelection);
+        gridContainer.addEventListener('touchstart', (e) => startSelection(e.touches[0] ? { target: e.touches[0].target, preventDefault: e.preventDefault.bind(e) } : e), { passive: false });
+        gridContainer.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element) handleCellInteraction({ target: element });
+            e.preventDefault();
+        }, { passive: false });
+        document.addEventListener('touchend', endSelection);
+        
+        resetButton.addEventListener('click', initializeGame);
+
+        submitButton.addEventListener('click', () => {
+            clearInterval(timerInterval);
+            finalTimeDisplay.textContent = `Waktu Anda: ${timerDisplay.textContent}`;
+            handleGameWin();
+        });
+        
+        playAgainButton.addEventListener('click', () => {
+            winModal.classList.add('hidden');
+            winModal.querySelector('div').classList.remove('scale-100');
+            initializeGame();
+        });
+
+        retrySaveButton.addEventListener('click', () => {
+            showModal('saving');
+            saveResults();
+        });
+
+    </script>
+</body>
+</html>
+
+
