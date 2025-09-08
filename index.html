@@ -449,16 +449,44 @@
         }
 
         function updateSelection(e) {
-            const cell = e.target.closest('.grid-cell');
-            if (!cell || !isMouseDown) return;
+            const currentCell = e.target.closest('.grid-cell');
+            if (!currentCell || !isMouseDown) return;
 
-            // Hapus seleksi dari semua sel sebelumnya
+            const startCell = selectedCells[0];
+            if (startCell === currentCell) return; // Tidak ada perubahan
+
+            // Hapus sorotan pilihan sebelumnya
             selectedCells.forEach(c => c.classList.remove('selected'));
 
-            // Hitung path baru dan perbarui state
-            selectedCells = getCellsOnLine(selectedCells[0], cell);
+            const r0 = parseInt(startCell.dataset.row);
+            const c0 = parseInt(startCell.dataset.col);
+            const r1 = parseInt(currentCell.dataset.row);
+            const c1 = parseInt(currentCell.dataset.col);
 
-            // Tambahkan seleksi ke semua sel di path yang baru
+            const dr = r1 - r0;
+            const dc = c1 - c0;
+            const absDr = Math.abs(dr);
+            const absDc = Math.abs(dc);
+
+            let endCell = currentCell;
+
+            // Sesuaikan pilihan ke garis horizontal, vertikal, atau diagonal yang sempurna
+            // Threshold menentukan apakah tarikan "sebagian besar" ke satu arah.
+            if (absDr < absDc * 0.5) { // Sebagian besar Horizontal
+                endCell = gridContainer.querySelector(`[data-row='${r0}'][data-col='${c1}']`);
+            } else if (absDc < absDr * 0.5) { // Sebagian besar Vertikal
+                endCell = gridContainer.querySelector(`[data-row='${r1}'][data-col='${c0}']`);
+            } else { // Diagonal
+                const diagDist = Math.min(absDr, absDc);
+                const snappedR1 = r0 + diagDist * Math.sign(dr);
+                const snappedC1 = c0 + diagDist * Math.sign(dc);
+                endCell = gridContainer.querySelector(`[data-row='${snappedR1}'][data-col='${snappedC1}']`);
+            }
+            
+            if (!endCell) endCell = currentCell; // Fallback jika sel tidak ditemukan
+
+            // Hitung jalur baru dan perbarui pilihan
+            selectedCells = getCellsOnLine(startCell, endCell);
             selectedCells.forEach(c => c.classList.add('selected'));
         }
 
@@ -476,7 +504,6 @@
             isMouseDown = false;
             let selectedWord = selectedCells.map(c => c.textContent).join('');
             
-            // Logika pengecekan kata terbalik dihapus.
             if (words.includes(selectedWord)) {
                 markWordAsFound(selectedWord, selectedCells);
             } else {
@@ -595,5 +622,4 @@
     </script>
 </body>
 </html>
-
 
